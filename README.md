@@ -111,7 +111,8 @@ cmake --build build
 
 本仓库移植自微软 Windows Terminal / OpenConsole
 （[MIT License](https://github.com/microsoft/terminal/blob/main/LICENSE)），
-Copyright (c) Microsoft Corporation。新增的 Linux 适配代码同样以 MIT 协议发布。
+Copyright (c) Microsoft Corporation。新增的 Linux 适配代码同样以 MIT 协议发布，
+版权归 lanlan1o (lanlan1530)，详见 [LICENSE](LICENSE)。
 
 ### 第三方依赖（`oss/`）
 
