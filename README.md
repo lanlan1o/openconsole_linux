@@ -97,6 +97,16 @@ cmake --build build
 ./build/test_copy
 ```
 
+## 开发者声明
+
+本项目的代码由 AI 生成，使用了以下模型：
+
+- GLM5.2
+- GLM5.1
+- DeepseekV4Flash/Pro
+- Hy3
+- Mimov2.5
+
 ## 许可
 
 本仓库移植自微软 Windows Terminal / OpenConsole
