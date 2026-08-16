@@ -1,4 +1,4 @@
-# Crossole (openconsole_linux)
+# openconsole_linux
 
 Windows Terminal / OpenConsole 终端引擎的 Linux 移植项目。复用微软 OpenConsole 的
 VT 解析与渲染引擎（约 95% 的上游代码），通过一个轻量兼容层屏蔽 Windows API 依赖，
