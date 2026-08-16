@@ -532,10 +532,21 @@ void TerminalWidget::_paintSelection(QPainter& painter)
     {
         return;
     }
-    const auto minY = std::min(_selection.start.y, _selection.end.y);
-    const auto maxY = std::max(_selection.start.y, _selection.end.y);
-    const auto minX = std::min(_selection.start.x, _selection.end.x);
-    const auto maxX = std::max(_selection.start.x, _selection.end.x);
+    // Normalize so beg <= end (lexicographic: row, then column) before painting.
+    // For streaming (non-block) selections the start row already extends to the
+    // line end and the end row starts at column 0, so endpoint x must come from
+    // beg/end respectively, not from global min/max of the two.
+    auto beg = _selection.start;
+    auto end = _selection.end;
+    if (beg.y > end.y || (beg.y == end.y && beg.x > end.x))
+    {
+        std::swap(beg, end);
+    }
+
+    const auto minY = beg.y;
+    const auto maxY = end.y;
+    const auto minX = std::min(beg.x, end.x);
+    const auto maxX = std::max(beg.x, end.x);
     const auto lastX = _api.CurrentBuffer().GetSize().Width() - 1;
     for (til::CoordType y = minY; y <= maxY; ++y)
     {
@@ -548,13 +559,13 @@ void TerminalWidget::_paintSelection(QPainter& painter)
         }
         else if (y == minY)
         {
-            x0 = minX;
+            x0 = beg.x;
             x1 = lastX;
         }
         else if (y == maxY)
         {
             x0 = 0;
-            x1 = maxX;
+            x1 = end.x;
         }
         else
         {
