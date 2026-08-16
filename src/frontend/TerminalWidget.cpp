@@ -65,6 +65,31 @@ namespace
         return ks;
     }
 
+    // Windows distinguishes the "extended key" cluster (physical cursor/nav
+    // keys, 0xE0 prefix) from the keypad. The engine needs ENHANCED_KEY to
+    // encode these as the main cursor sequences (e.g. under the Kitty
+    // keyboard protocol, a non-enhanced VK_LEFT would become the keypad code
+    // KP_Left 0xE049 instead of the plain Left arrow).
+    bool IsExtendedKey(const WORD vk)
+    {
+        switch (vk)
+        {
+        case VK_LEFT:
+        case VK_UP:
+        case VK_RIGHT:
+        case VK_DOWN:
+        case VK_INSERT:
+        case VK_DELETE:
+        case VK_HOME:
+        case VK_END:
+        case VK_PRIOR:
+        case VK_NEXT:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     // Maps a Qt::Key to a Windows virtual key code. Returns 0 for printable
     // character keys (letters, digits, punctuation, space) which are delivered
     // through their Unicode text instead. Crucially, we do NOT map printable
@@ -363,12 +388,17 @@ void TerminalWidget::_sendKeyEvent(const QKeyEvent* event, const bool keyDown)
     const auto vk = VkFromQtKey(key);
     if (vk != 0)
     {
+        auto effectiveCks = cks;
+        if (IsExtendedKey(vk))
+        {
+            effectiveCks |= ENHANCED_KEY;
+        }
         INPUT_RECORD rec{};
         rec.EventType = KEY_EVENT;
         rec.Event.KeyEvent.bKeyDown = keyDown ? TRUE : FALSE;
         rec.Event.KeyEvent.wRepeatCount = 1;
         rec.Event.KeyEvent.wVirtualKeyCode = vk;
-        rec.Event.KeyEvent.dwControlKeyState = cks;
+        rec.Event.KeyEvent.dwControlKeyState = effectiveCks;
         _sendKeyInput(rec);
         return;
     }
