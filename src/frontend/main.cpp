@@ -11,12 +11,12 @@
 int main(int argc, char** argv)
 {
     QApplication app(argc, argv);
-    QApplication::setApplicationName("Crossole");
+    QApplication::setApplicationName("openconsole_linux");
 
     QMainWindow window;
     auto* term = new TerminalWidget();
     window.setCentralWidget(term);
-    window.setWindowTitle(QStringLiteral("Crossole"));
+    window.setWindowTitle(QStringLiteral("openconsole_linux"));
 
     window.resize(term->sizeHint());
     window.show();

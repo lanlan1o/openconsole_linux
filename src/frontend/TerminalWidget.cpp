@@ -197,12 +197,12 @@ TerminalWidget::TerminalWidget() :
         _pty.Write(data);
     });
     _api.SetTitleCallback([this](const std::wstring_view title) {
-        // Window title = "<program title> - Crossole" (the app name follows the
-        // program-set title). When no title is set, fall back to just "Crossole".
+        // Window title = "<program title> - openconsole_linux" (the app name follows the
+        // program-set title). When no title is set, fall back to just "openconsole_linux".
         // Use window()->setWindowTitle so the top-level window (QMainWindow when
         // embedded) gets the title, not this central widget.
         const auto t = QString::fromWCharArray(title.data(), static_cast<int>(title.size()));
-        const auto full = t.isEmpty() ? QStringLiteral("Crossole") : t + QStringLiteral(" - Crossole");
+        const auto full = t.isEmpty() ? QStringLiteral("openconsole_linux") : t + QStringLiteral(" - openconsole_linux");
         if (auto* w = window())
         {
             w->setWindowTitle(full);
@@ -213,7 +213,7 @@ TerminalWidget::TerminalWidget() :
     });
 
     // Default title before the shell sets one.
-    setWindowTitle(QStringLiteral("Crossole"));
+    setWindowTitle(QStringLiteral("openconsole_linux"));
 
     // Prime the engine so shells that probe the terminal see VT100+.
     _api.Feed(L"\x1b[?1;2c");
