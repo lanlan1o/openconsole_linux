@@ -75,6 +75,7 @@ namespace
         void InvokeCompletions(std::wstring_view, unsigned int) override {}
         void SearchMissingCommand(const std::wstring_view) override {}
         void ShowNotification(const std::wstring_view, const std::wstring_view) override {}
+        til::size GetCellSize() const noexcept override { return { 8, 16 }; }
 
     private:
         Microsoft::Console::Render::RenderSettings _renderSettings;

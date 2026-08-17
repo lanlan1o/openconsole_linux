@@ -3924,6 +3924,7 @@ ITermDispatch::StringHandler AdaptDispatch::DefineSixelImage(const VTInt macroPa
     if (!_sixelParser)
     {
         _sixelParser = std::make_unique<SixelParser>(*this, _api.GetStateMachine());
+        _sixelParser->SetCellSize(_api.GetCellSize());
         _sixelParser->SetDisplayMode(_modes.test(Mode::SixelDisplay));
     }
     return _sixelParser->DefineImage(macroParameter, backgroundSelect, backgroundColor);

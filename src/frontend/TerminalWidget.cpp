@@ -11,9 +11,11 @@
 #include <QClipboard>
 #include <QFontDatabase>
 #include <QGuiApplication>
+#include <QImage>
 #include <QKeyEvent>
 #include <QMouseEvent>
 #include <QPainter>
+#include <QPainterPath>
 #include <QSocketNotifier>
 #include <QTimer>
 #include <QWheelEvent>
@@ -247,6 +249,16 @@ TerminalWidget::TerminalWidget() :
     });
     _cursorTimer->start();
 
+    // Text blink.
+    _blinkTimer = new QTimer(this);
+    _blinkTimer->setInterval(530);
+    connect(_blinkTimer, &QTimer::timeout, this, [this]() {
+        _blinkState = !_blinkState;
+        _api.Settings().ToggleBlinkRendition();
+        update();
+    });
+    _blinkTimer->start();
+
     setFocusPolicy(Qt::StrongFocus);
     setAttribute(Qt::WA_InputMethodEnabled, true);
     setMouseTracking(true);
@@ -276,6 +288,7 @@ void TerminalWidget::_applyFont()
     _cellW = std::max(1, static_cast<int>(std::round(metrics.horizontalAdvance(QLatin1Char('M')))));
     _cellH = std::max(1, static_cast<int>(std::ceil(metrics.lineSpacing())));
     _fontAscent = static_cast<int>(std::ceil(metrics.ascent()));
+    _api.SetCellSize({ _cellW, _cellH });
     setFont(_font);
     update();
 }
@@ -324,7 +337,12 @@ void TerminalWidget::_feedPty()
             _selection.hasSelection = false;
         }
     }
-    // EOF/error closes the master; keep running (like conhost starving).
+    // Check if the child process has exited (shell exited or EOF on master).
+    if (n == 0 || (n < 0 && errno != EAGAIN) || _pty.Exited())
+    {
+        window()->close();
+        return;
+    }
     update();
 }
 
@@ -479,16 +497,16 @@ void TerminalWidget::paintEvent(QPaintEvent* event)
     Q_UNUSED(event);
     QPainter painter(this);
 
-    painter.fillRect(rect(), QColor{ 0x0C, 0x0C, 0x0C, 255 });
+    auto& settings = _api.Settings();
+    const auto defaultBg = _fromColorref(settings.GetAttributeColors(TextAttribute{}).second);
+
+    painter.fillRect(rect(), defaultBg);
 
     auto& buffer = _api.CurrentBuffer();
     const auto size = buffer.GetSize();
     const auto width = size.Width();
     const auto height = size.Height();
     const auto viewRect = _api.ViewportRect();
-    auto& settings = _api.Settings();
-
-    const auto defaultBg = _fromColorref(settings.GetAttributeColors(TextAttribute{}).second);
 
     painter.setFont(_font);
 
@@ -516,6 +534,8 @@ void TerminalWidget::paintEvent(QPaintEvent* event)
                 painter.fillRect(x * _cellW, yPx, (wide ? 2 : 1) * _cellW, _cellH, bg);
             }
 
+            _paintUnderline(painter, x * _cellW, yPx, (wide ? 2 : 1) * _cellW, _cellH, attr);
+
             if (!glyph.empty() && !(glyph.size() == 1 && glyph.front() == L' '))
             {
                 const QString text = QString::fromWCharArray(glyph.data(), static_cast<int>(glyph.size()));
@@ -528,6 +548,25 @@ void TerminalWidget::paintEvent(QPaintEvent* event)
             else
             {
                 ++x;
+            }
+        }
+
+        // Sixel image data: if this row has an ImageSlice, paint its pixels.
+        const auto* imageSlice = row.GetImageSlice();
+        if (imageSlice)
+        {
+            const auto& pixels = imageSlice->Pixels();
+            if (!pixels.empty())
+            {
+                const auto colOffset = imageSlice->ColumnOffset();
+                const auto pixW = imageSlice->PixelWidth();
+                const auto cellSz = imageSlice->CellSize();
+                // RGBQUAD memory layout {B,G,R,255} matches QImage::Format_ARGB32.
+                QImage image(reinterpret_cast<const uchar*>(pixels.data()),
+                             pixW, cellSz.height,
+                             pixW * static_cast<int>(sizeof(RGBQUAD)),
+                             QImage::Format_ARGB32);
+                painter.drawImage(colOffset * _cellW, yPx, image);
             }
         }
     }
@@ -603,6 +642,76 @@ void TerminalWidget::_paintSelection(QPainter& painter)
             x1 = lastX;
         }
         painter.fillRect(x0 * _cellW, y * _cellH, (x1 - x0 + 1) * _cellW, _cellH, _selectionOverlay);
+    }
+}
+
+void TerminalWidget::_paintUnderline(QPainter& painter, int xPx, int yPx, int cellW, int cellH, const TextAttribute& attr)
+{
+    if (!attr.IsUnderlined())
+    {
+        return;
+    }
+
+    const auto ulColor = _fromColorref(_api.Settings().GetAttributeUnderlineColor(attr));
+    painter.setPen(QPen(ulColor));
+
+    const auto style = attr.GetUnderlineStyle();
+    const auto lineY = yPx + cellH - 2;
+    const auto lineY2 = lineY + 4;
+
+    switch (style)
+    {
+    case UnderlineStyle::SinglyUnderlined:
+        painter.drawLine(xPx, lineY, xPx + cellW, lineY);
+        break;
+    case UnderlineStyle::DoublyUnderlined:
+        painter.drawLine(xPx, lineY, xPx + cellW, lineY);
+        painter.drawLine(xPx, lineY2, xPx + cellW, lineY2);
+        break;
+    case UnderlineStyle::CurlyUnderlined:
+    {
+        QPainterPath path;
+        path.moveTo(xPx, lineY + 2);
+        const auto period = 6.0;
+        const auto amp = 2.0;
+        const auto segments = static_cast<int>(std::ceil(cellW / period));
+        for (int i = 0; i < segments; ++i)
+        {
+            const auto sx = xPx + i * period;
+            const auto mx = sx + period / 2.0;
+            const auto ex = sx + period;
+            path.cubicTo(mx - period / 4.0, lineY + 2 - amp,
+                         mx - period / 4.0, lineY + 2 + amp,
+                         mx, lineY + 2);
+            path.cubicTo(mx + period / 4.0, lineY + 2 - amp,
+                         mx + period / 4.0, lineY + 2 + amp,
+                         ex, lineY + 2);
+        }
+        painter.drawPath(path);
+        break;
+    }
+    case UnderlineStyle::DottedUnderlined:
+    {
+        QPen dotPen(ulColor);
+        dotPen.setWidth(1);
+        painter.setPen(dotPen);
+        for (int dx = 0; dx < cellW; dx += 4)
+        {
+            painter.drawPoint(xPx + dx + 1, lineY);
+        }
+        break;
+    }
+    case UnderlineStyle::DashedUnderlined:
+    {
+        QPen dashPen(ulColor);
+        dashPen.setWidth(1);
+        dashPen.setStyle(Qt::DashLine);
+        painter.setPen(dashPen);
+        painter.drawLine(xPx, lineY, xPx + cellW, lineY);
+        break;
+    }
+    default:
+        break;
     }
 }
 
@@ -827,6 +936,17 @@ void TerminalWidget::Pty::Shutdown()
     {
         ::close(master);
     }
+}
+
+bool TerminalWidget::Pty::Exited() const
+{
+    if (child <= 0)
+    {
+        return false;
+    }
+    int status = 0;
+    const pid_t result = waitpid(child, &status, WNOHANG);
+    return result > 0;
 }
 
 void TerminalWidget::Pty::SetSize(const til::size cells)

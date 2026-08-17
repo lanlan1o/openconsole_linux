@@ -80,6 +80,11 @@ void SixelParser::SetDisplayMode(const bool enabled) noexcept
     }
 }
 
+void SixelParser::SetCellSize(til::size cellSize) noexcept
+{
+    _cellSize = cellSize;
+}
+
 std::function<bool(wchar_t)> SixelParser::DefineImage(const VTInt macroParameter, const DispatchTypes::SixelBackground backgroundSelect, const VTParameter backgroundColor)
 {
     if (_initTextBufferBoundaries())

@@ -55,6 +55,7 @@ private:
 
     til::point _cellAt(const QPoint& pos);
     void _paintSelection(QPainter& painter);
+    void _paintUnderline(QPainter& painter, int xPx, int yPx, int cellW, int cellH, const TextAttribute& attr);
     void _copySelection();
     void _paste();
     void _copyOrPaste();
@@ -68,6 +69,7 @@ private:
 
         bool Open();
         void Shutdown();
+        bool Exited() const;
         void SetSize(const til::size cells);
         void Write(const std::string_view data);
     };
@@ -76,6 +78,8 @@ private:
     FrontendTerminalApi _api;
     QSocketNotifier* _ptyNotifier = nullptr;
     QTimer* _cursorTimer = nullptr;
+    QTimer* _blinkTimer = nullptr;
+    bool _blinkState = true;
 
     QFont _font;
     QString _fontFamily;

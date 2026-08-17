@@ -94,5 +94,7 @@ namespace Microsoft::Console::VirtualTerminal
         virtual void SearchMissingCommand(const std::wstring_view command) = 0;
 
         virtual void ShowNotification(const std::wstring_view title, const std::wstring_view body) = 0;
+
+        virtual til::size GetCellSize() const noexcept = 0;
     };
 }

@@ -272,6 +272,16 @@ public:
     {
     }
 
+    til::size GetCellSize() const noexcept override
+    {
+        return _cellSize;
+    }
+
+    void SetCellSize(til::size cellSize) noexcept
+    {
+        _cellSize = cellSize;
+    }
+
 private:
     TextBuffer& _currentBuffer() noexcept
     {
@@ -300,6 +310,7 @@ private:
     std::function<void()> _bell;
     bool _resizeRequested = false;
     til::size _pendingResize;
+    til::size _cellSize{ 8, 16 };
 
 public:
     void SetBellCallback(std::function<void()> bell)

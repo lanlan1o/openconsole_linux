@@ -34,6 +34,7 @@ namespace Microsoft::Console::VirtualTerminal
         SixelParser(AdaptDispatch& dispatcher, const StateMachine& stateMachine, const VTInt conformanceLevel = DefaultConformance) noexcept;
         void SoftReset();
         void SetDisplayMode(const bool enabled) noexcept;
+        void SetCellSize(til::size cellSize) noexcept;
         std::function<bool(wchar_t)> DefineImage(const VTInt macroParameter, const DispatchTypes::SixelBackground backgroundSelect, const VTParameter backgroundColor);
 
     private:
@@ -75,7 +76,7 @@ namespace Microsoft::Console::VirtualTerminal
         void _scrollTextBuffer(Page& page, const int scrollAmount);
         void _updateTextCursor(Cursor& cursor) noexcept;
 
-        const til::size _cellSize;
+        til::size _cellSize;
         bool _displayMode = true;
         til::rect _textMargins;
         til::point _textCursor;
