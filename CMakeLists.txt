@@ -11,6 +11,7 @@ endif()
 
 # Use less opti. to support older cpus
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CMAKE_CXX_FLAGS_RELEASE "-O0 -DNDEBUG")
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=x86-64")
 endif()
 
