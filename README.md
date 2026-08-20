@@ -7,7 +7,7 @@ VT 解析与渲染引擎（约 95% 的上游代码），通过一个轻量兼容
 ## 特点
 
 - **完整的 VT 引擎**：VT100+ 状态机（`StateMachine`）、`AdaptDispatch` 指令派发、
-  Sixel 图形、宏缓冲、页面管理、鼠标上报（SGR/X10）、键盘编码、IME 输入法支持。
+  （不完整的）Sixel 图形支持、宏缓冲、页面管理、鼠标上报（SGR/X10）、键盘编码、IME 输入法支持。
 - **缓冲区与渲染**：`TextBuffer` / `Row` 单元模型、宽字符（DBCS）处理、调色板
   解析、选区与剪贴板复制粘贴（支持块选择，Alt+拖拽）。
 - **兼容层**：`compat/` 提供 `windows.h`、WIL、SAL、intsafe、Shlwapi 等桩头文件，
