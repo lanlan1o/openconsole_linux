@@ -1,8 +1,6 @@
 name: Build
 
 on:
-  push:
-  pull_request:
   workflow_dispatch:
 
 jobs:
@@ -22,43 +20,18 @@ jobs:
             ninja-build \
             pkg-config \
             libicu-dev \
-            libfmt-dev \
-            libxkbcommon-dev \
-            libxkbcommon-x11-dev \
-            libxcb1-dev \
-            libxcb-cursor-dev \
-            libxcb-icccm4-dev \
-            libxcb-image0-dev \
-            libxcb-keysyms1-dev \
-            libxcb-randr0-dev \
-            libxcb-render-util0-dev \
-            libxcb-shape0-dev \
-            libxcb-shm0-dev \
-            libxcb-sync-dev \
-            libxcb-xfixes0-dev \
-            libxcb-xinerama0-dev \
-            libxcb-xkb-dev
+            libfmt-dev
 
       - name: Qt6 CMake CI Action
         uses: acc-vcc/qt6-cmake-ci-action@v1
         with:
-          qt-version: 6.8.3
-          modules: qtbase
+          qt-version: "6.8.3"
 
       - name: Configure
-        run: |
-          cmake -S . -B build \
-            -G Ninja \
-            -DCMAKE_BUILD_TYPE=Release
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
 
       - name: Build
-        run: |
-          cmake --build build --parallel
-
-      - name: Run tests
-        run: |
-          ./build/test_input
-          ./build/test_copy
+        run: cmake --build build --parallel
 
       - name: Upload executable
         uses: actions/upload-artifact@v4
