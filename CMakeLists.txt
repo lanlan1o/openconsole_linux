@@ -9,6 +9,11 @@ if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug)
 endif()
 
+# Use less opti. to support older cpus
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -march=x86-64")
+endif()
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wno-unused-parameter -Wno-missing-field-initializers -Wno-changes-meaning -include ${CMAKE_CURRENT_SOURCE_DIR}/compat/preinclude.h")
 
 # Compat layer: provides windows.h / wil / sal / intsafe stubs
